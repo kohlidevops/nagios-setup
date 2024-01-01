@@ -115,3 +115,123 @@ sudo systemctl status nagios
 ![image](https://github.com/kohlidevops/nagios-setup/assets/100069489/7a779764-36c0-42e7-ad60-8958577c4875)
 
 # How to Add Linux Host to Nagios Server to Monitoring Linux Host
+
+## To launch EC2 Instance for host
+
+![image](https://github.com/kohlidevops/nagios-setup/assets/100069489/0137d781-1385-4d78-ac62-2f45070e3116)
+
+To launch EC2 ubuntu22 instance and SSH to machine
+
+```
+sudo apt-get update -y
+sudo apt-get upgrade -y
+```
+
+### To install NRPE and Nagios Plugin on your Linux host
+
+```
+sudo apt install nagios-nrpe-server nagios-plugins -y
+```
+
+### Configure Nagios NRPE Agent
+
+```
+sudo vim /etc/nagios/nrpe.cfg
+edit and update
+server_address = 43.204.142.198 #Public IP of your Linux host
+allowed_hosts = 127.0.0.1,65.0.71.195 #Public IP of Nagios Server
+save and exit
+```
+
+#### To restart NRPE service
+
+```
+sudo systemctl restart nagios-nrpe-server
+sudo systemctl enable nagios-nrpe-server
+```
+
+## Install NRPE on the Nagios Server
+
+```
+sudo apt install nagios-nrpe-server -y
+```
+
+### Add Linux Host on Nagios Server
+
+```
+cd /usr/local/nagios/etc/
+sudo chmod 775 servers
+sudo chown nagios:nagios servers
+cd servers
+```
+
+### Create a new configuration file named linuxhost-1.cfg for the Linux host that will be added to Nagios
+
+```
+sudo vim linuxhost-1.cfg
+#add below content
+
+define host{
+use                     linux-server
+host_name               linuxhost-1
+alias                   LinuxHost-1
+address                 43.204.142.198  #Public IP of host
+}
+
+define service{
+use                             local-service
+host_name                       linuxhost-1
+service_description             Root / Partition
+check_command                   check_nrpe!check_disk
+}
+
+define service{
+use                             local-service
+host_name                       linuxhost-1
+service_description             /mnt Partition
+check_command                   check_nrpe!check_mnt_disk
+}
+
+define service{
+use                             local-service
+host_name                       linuxhost-1
+service_description             Current Users
+check_command                   check_nrpe!check_users
+}
+
+define service{
+use                             local-service
+host_name                       linuxhost-1
+service_description             Total Processes
+check_command                   check_nrpe!check_total_procs
+}
+
+define service{
+use                             local-service
+host_name                       linuxhost-1
+service_description             Current Load
+check_command                   check_nrpe!check_load
+}
+
+save and exit
+
+sudo chmod 664 linuxhost-1.cfg
+sudo chown nagios:nagios linuxhost-1.cfg
+```
+
+#### Make ensure the configuration is correct
+
+```
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+```
+![image](https://github.com/kohlidevops/nagios-setup/assets/100069489/221a078b-0887-4599-832d-ccdcb41d9609)
+
+### Restart Nagios server
+
+```
+sudo systemctl restart nagios
+```
+
+### Access the Nagios portal to check
+
+![image](https://github.com/kohlidevops/nagios-setup/assets/100069489/ffe83d0e-f920-4e20-b504-7bfd1a6bd35a)
